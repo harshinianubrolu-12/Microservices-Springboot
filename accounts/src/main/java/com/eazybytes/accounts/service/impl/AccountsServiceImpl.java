@@ -13,14 +13,9 @@ import com.eazybytes.accounts.repository.AccountsRepository;
 import com.eazybytes.accounts.repository.CustomerRepository;
 import com.eazybytes.accounts.service.IAccountsService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
-
-import static com.eazybytes.accounts.mapper.CustomerMapper.mapToCustomerDto;
 
 @Service
 @AllArgsConstructor
@@ -36,8 +31,6 @@ public class AccountsServiceImpl implements IAccountsService {
             // throw customer already exists exception.
             throw new CustomerAlreadyExistsException("Customer already exists with mobile number: " + customer.getMobileNumber());
         }
-        customer.setCreatedBy(customerDto.getName());
-        customer.setCreatedAt(LocalDateTime.now());
         Customer savedCustomer = customerRepository.save(customer);
         createAccountForCustomer(savedCustomer);
     }
@@ -55,6 +48,41 @@ public class AccountsServiceImpl implements IAccountsService {
         customerDto.setAccountsDto(accountsDto);
         return customerDto;
     }
+
+    @Override
+    public boolean update(CustomerDto customerDto) {
+        boolean isUpdated = false;
+        AccountsDto accountsDto=customerDto.getAccountsDto();
+        if(accountsDto!=null) {
+            Accounts accounts = accountsRepository.findById(accountsDto.getAccountNumber()).orElseThrow(
+                    ()->new ResourceNotFoundException("accounts","accountNumber",accountsDto.getAccountNumber().toString())
+            );
+            AccountsMapper.mapToAccounts(accountsDto,accounts);
+            accountsRepository.save(accounts);
+
+            Customer customer = customerRepository.findById(accounts.getCustomerId()).orElseThrow(
+                    ()->new ResourceNotFoundException("customer","customerId",accounts.getCustomerId().toString())
+            );
+            CustomerMapper.mapToCustomer(customerDto,customer);
+            customerRepository.save(customer);
+            isUpdated = true;
+        }
+        return isUpdated;
+
+    }
+
+    @Override
+    public boolean deletedetails(String mobileNumber) {
+        boolean isDeleted = false;
+        Customer customer= customerRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                ()->new ResourceNotFoundException("customer","mobileNumber",mobileNumber)
+        );
+        accountsRepository.deleteByCustomerId(customer.getCustomerId());
+        customerRepository.deleteById(customer.getCustomerId());
+        isDeleted = true;
+        return isDeleted;
+    }
+
     private void createAccountForCustomer(Customer customer){
         Accounts account = new Accounts();
         account.setCustomerId(customer.getCustomerId());
@@ -62,8 +90,6 @@ public class AccountsServiceImpl implements IAccountsService {
         account.setAccountNumber(randomAccNumber);
         account.setBranchAddress(AccountsConstants.ADDRESS);
         account.setAccountType(AccountsConstants.SAVINGS);
-        account.setCreatedAt(LocalDateTime.now());
-        account.setCreatedBy(customer.getName());
         accountsRepository.save(account);
     }
 }

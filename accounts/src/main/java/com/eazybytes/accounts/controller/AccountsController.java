@@ -3,22 +3,24 @@ package com.eazybytes.accounts.controller;
 import com.eazybytes.accounts.constants.AccountsConstants;
 import com.eazybytes.accounts.dto.CustomerDto;
 import com.eazybytes.accounts.dto.ResponseDto;
-import com.eazybytes.accounts.exception.CustomerAlreadyExistsException;
 import com.eazybytes.accounts.service.IAccountsService;
-import com.eazybytes.accounts.service.impl.AccountsServiceImpl;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(value = "/api", produces = {MediaType.APPLICATION_JSON_VALUE})
+@Validated
 public class AccountsController{
     @Autowired
     IAccountsService accountsService;
     @PostMapping("/create")
-    public ResponseEntity<ResponseDto> createAccount(@RequestBody CustomerDto customerDto)
+    public ResponseEntity<ResponseDto> createAccount(@Valid @RequestBody CustomerDto customerDto)
     {
         accountsService.create(customerDto);
         return ResponseEntity
@@ -27,8 +29,25 @@ public class AccountsController{
 
      }
     @GetMapping("/fetch")
-     public ResponseEntity<CustomerDto> fetchdetails(@RequestParam String mobileNumber){
+     public ResponseEntity<CustomerDto> fetchdetails(@RequestParam @Pattern(regexp="(^$|[0-9]{10})", message = "Mobile number must be 10 digits") String mobileNumber){
         CustomerDto customerDto = accountsService.fetchdetails(mobileNumber);
         return ResponseEntity.status(HttpStatus.OK).body(customerDto);
+     }
+
+     @PutMapping("/update")
+     public ResponseEntity<ResponseDto> updatedetails(@Valid @RequestBody CustomerDto customerDto){
+            if(accountsService.update(customerDto)){
+                return ResponseEntity.status(HttpStatus.OK).body(new ResponseDto(AccountsConstants.STATUS_200, AccountsConstants.MESSAGE_200));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseDto(AccountsConstants.STATUS_500, AccountsConstants.MESSAGE_500));
+     }
+
+     @DeleteMapping("/delete")
+    public ResponseEntity<ResponseDto> deletedetails(@RequestParam @Pattern(regexp="(^$|[0-9]{10})", message = "Mobile number must be 10 digits") String mobileNumber){
+        boolean isDeleted=accountsService.deletedetails(mobileNumber);
+        if(isDeleted){
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseDto(AccountsConstants.STATUS_200, AccountsConstants.MESSAGE_200));
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseDto(AccountsConstants.STATUS_500, AccountsConstants.MESSAGE_500));
      }
 }
