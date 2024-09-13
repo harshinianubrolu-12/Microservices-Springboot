@@ -7,4 +7,5 @@ public interface IAccountsService {
     CustomerDto fetchdetails(String mobileNumber);
     boolean update(CustomerDto customerDto);
     boolean deletedetails(String mobileNumber);
+    ;
 }
