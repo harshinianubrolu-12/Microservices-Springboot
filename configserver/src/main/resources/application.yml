@@ -1,10 +1,28 @@
 spring:
+  profiles:
+    active: git
   application:
     name: "configserver"
   cloud:
     config:
       server:
-       native:
-        search-locations: "classpath:/config"
+       git:
+         uri: "https://github.com/harshinianubrolu-12/config"
+         default-label: main
+         timeout: 5
+         clone-on-start: true
+         force-pull: true
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "guest"
+    password: "guest"
+encrypt:
+  key: "45D81EC1EF61DF9AD8D3E5BB397F9"
 server:
   port: 8071
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
