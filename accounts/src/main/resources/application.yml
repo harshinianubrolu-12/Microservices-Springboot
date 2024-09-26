@@ -15,11 +15,6 @@ spring:
   h2:
     console:
       enabled: true
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    show-sql: true
   rabbitmq:
     host: "localhost"
     port: 5672
